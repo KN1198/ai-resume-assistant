@@ -41,28 +41,25 @@ if uploaded_file:
 
     resume_text = ""
 
-    # =========================
     # SAFE PDF READING
-    # =========================
     try:
         reader = PdfReader(uploaded_file)
-
         for page in reader.pages:
             resume_text += page.extract_text() or ""
 
         if not resume_text.strip():
-            st.warning("⚠️ This PDF seems to be scanned or has no readable text.")
-            st.info("💡 Tip: Export your resume as a proper PDF from Word or Google Docs.")
+            st.warning("⚠️ This PDF has no readable text. Use a proper exported PDF.")
+            st.stop()
 
     except PdfReadError:
-        st.error("❌ Unable to read this PDF. Please upload a valid text-based resume.")
+        st.error("❌ Cannot read this PDF. Upload a proper resume.")
         st.stop()
 
     # =========================
-    # RESUME PREVIEW
+    # PREVIEW
     # =========================
     st.markdown("## 📌 Resume Preview")
-    st.text_area("Full Resume", resume_text, height=300)
+    st.text_area("Resume Content", resume_text, height=300)
 
     # =========================
     # JOB DESCRIPTION
@@ -70,10 +67,7 @@ if uploaded_file:
     st.markdown("## 💼 Job Description")
     job_desc = st.text_area("Paste Job Description Here")
 
-    # =========================
-    # ANALYSIS
-    # =========================
-    if st.button("🔍 Analyze Resume for this Job"):
+    if st.button("🔍 Analyze & Improve Resume"):
 
         text = resume_text.lower()
         job_text = job_desc.lower()
@@ -81,93 +75,97 @@ if uploaded_file:
         resume_words = set(text.split())
         job_words = set(job_text.split())
 
-        # MATCH SCORE
-        match_words = resume_words.intersection(job_words)
-        match_score = int(len(match_words) / len(job_words) * 100) if job_words else 0
+        match_score = int(len(resume_words & job_words) / len(job_words) * 100) if job_words else 0
 
-        st.subheader("📊 Job Match Score")
-        st.success(f"{match_score}% match with job description")
+        st.subheader("📊 Match Score")
+        st.success(f"{match_score}% match with job")
 
-        # MISSING KEYWORDS
-        missing_keywords = job_words - resume_words
+        missing_keywords = list(job_words - resume_words)[:10]
 
         st.subheader("❌ Missing Keywords")
-        if missing_keywords:
-            st.write(", ".join(list(missing_keywords)[:20]))
-        else:
-            st.success("No major keywords missing!")
+        st.write(", ".join(missing_keywords) if missing_keywords else "None")
 
         # =========================
-        # IMPROVEMENT SUGGESTIONS
+        # SECTION DETECTION
         # =========================
-        st.subheader("💡 Resume Improvements for This Job")
+        sections = {
+            "summary": "",
+            "experience": "",
+            "education": "",
+            "skills": ""
+        }
 
-        suggestions = []
+        current_section = None
+        for line in resume_text.split("\n"):
+            lower = line.lower()
 
-        if match_score < 50:
-            suggestions.append("⚠️ Resume is not aligned with this job. Major updates needed.")
+            if "summary" in lower or "objective" in lower:
+                current_section = "summary"
+            elif "experience" in lower:
+                current_section = "experience"
+            elif "education" in lower:
+                current_section = "education"
+            elif "skills" in lower:
+                current_section = "skills"
 
-        if match_score < 70:
-            suggestions.append("⚠️ Add more relevant skills and experience from the job description.")
-
-        if missing_keywords:
-            suggestions.append(f"👉 Add keywords: {', '.join(list(missing_keywords)[:10])}")
-
-        if "experience" not in text:
-            suggestions.append("👉 Add relevant work experience.")
-
-        if "skills" not in text:
-            suggestions.append("👉 Add a skills section tailored to this job.")
-
-        for s in suggestions:
-            st.write(s)
-
-        # =========================
-        # REWRITE EXAMPLES
-        # =========================
-        st.subheader("✍️ Resume Rewrite Examples")
-
-        st.write("❌ Worked on data analysis")
-        st.write("✅ Analyzed business data using Python and SQL to improve decision-making")
-
-        st.write("❌ Responsible for dashboard")
-        st.write("✅ Built interactive dashboards using Power BI to track KPIs")
+            if current_section:
+                sections[current_section] += line + "\n"
 
         # =========================
-        # IMPROVED RESUME GENERATION
+        # IMPROVE CONTENT
+        # =========================
+        improved_summary = f"""
+Results-driven professional with strong expertise in data analysis, problem-solving, and business insights.
+Skilled in Python, SQL, and tools relevant to this role.
+"""
+
+        improved_experience = """
+- Developed data-driven solutions to improve business performance  
+- Analyzed datasets using Python and SQL  
+- Built dashboards and reports for insights  
+- Improved efficiency through automation  
+"""
+
+        improved_skills = "\n".join([f"- {kw}" for kw in missing_keywords]) if missing_keywords else sections["skills"]
+
+        # =========================
+        # FINAL RESUME
         # =========================
         improved_resume = f"""
-PROFESSIONAL SUMMARY:
-Data-driven professional with expertise in Python, SQL, and analytics.
+===============================
+        UPDATED RESUME
+===============================
 
-SKILLS:
-Python, SQL, Data Analysis, Dashboarding
+🔹 SUMMARY
+{improved_summary if sections["summary"] else "Add professional summary"}
 
-EXPERIENCE:
-- Improved processes using data-driven insights
-- Built dashboards and reports for decision-making
+🔹 EXPERIENCE
+{improved_experience if sections["experience"] else "Add experience section"}
 
-TAILORED KEYWORDS:
-{', '.join(list(missing_keywords)[:10])}
+🔹 SKILLS
+{improved_skills if sections["skills"] else "Add skills"}
+
+🔹 EDUCATION
+{sections["education"] if sections["education"] else "Add education"}
+
+===============================
 """
 
         st.markdown("## 📄 Improved Resume")
-        st.text_area("Generated Resume", improved_resume, height=300)
+        st.text_area("Updated Resume", improved_resume, height=300)
 
         # =========================
-        # DOWNLOAD OPTIONS
+        # DOWNLOAD
         # =========================
         st.markdown("## 📥 Download Resume")
 
-        # TXT
         st.download_button(
-            label="Download as TXT",
+            "Download TXT",
             data=improved_resume,
-            file_name="improved_resume.txt",
+            file_name="updated_resume.txt",
             mime="text/plain"
         )
 
-        # DOCX FUNCTION
         def create_docx(text):
             doc = Document()
             for line in text.split("\n"):
@@ -178,12 +176,10 @@ TAILORED KEYWORDS:
             buffer.seek(0)
             return buffer
 
-        docx_file = create_docx(improved_resume)
-
         st.download_button(
-            label="Download as Word (.docx)",
-            data=docx_file,
-            file_name="improved_resume.docx",
+            "Download DOCX",
+            data=create_docx(improved_resume),
+            file_name="updated_resume.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
 
@@ -191,12 +187,4 @@ TAILORED KEYWORDS:
 # FOOTER
 # =========================
 st.markdown("---")
-st.markdown("## ⚙️ How it works")
-st.markdown("""
-1. Upload your resume  
-2. Paste job description  
-3. Get match score  
-4. Improve and download your resume 🚀
-""")
-
-st.markdown("⭐ Built by Krunal | AI Resume Assistant")
+st.markdown("Built by Krunal 🚀")
