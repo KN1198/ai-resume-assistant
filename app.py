@@ -7,12 +7,27 @@ from pypdf import PdfReader
 st.set_page_config(page_title="AI Resume Assistant", layout="centered")
 
 # =========================
-# HEADER
+# CUSTOM STYLING
 # =========================
 st.markdown("""
-# 🚀 AI Resume Analyzer  
-### Improve your resume & match with jobs instantly
-""")
+<style>
+    .stButton>button {
+        background-color: #6366F1;
+        color: white;
+        border-radius: 8px;
+        height: 3em;
+        width: 100%;
+        font-size: 16px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# =========================
+# HEADER
+# =========================
+st.markdown("# 🚀 AI Resume Analyzer")
+st.markdown("### 🎯 Land your dream job faster")
+st.markdown("Get instant resume feedback, improve your CV, and match with job descriptions in seconds.")
 
 st.markdown("---")
 
@@ -23,6 +38,7 @@ uploaded_file = st.file_uploader("📄 Upload your Resume (PDF)", type=["pdf"])
 
 if uploaded_file:
 
+    # Extract text
     reader = PdfReader(uploaded_file)
     resume_text = ""
 
@@ -30,10 +46,10 @@ if uploaded_file:
         resume_text += page.extract_text() or ""
 
     # =========================
-    # PREVIEW
+    # FULL PREVIEW
     # =========================
     st.markdown("## 📌 Resume Preview")
-    st.info(resume_text[:500])
+    st.text_area("Full Resume Content", resume_text, height=300)
 
     # =========================
     # RESUME ANALYSIS
@@ -42,40 +58,67 @@ if uploaded_file:
 
     if st.button("Analyze Resume"):
 
-        suggestions = []
+        st.subheader("📊 Professional Resume Review")
+        st.info("📌 This analysis is based on ATS (Applicant Tracking System) best practices.")
+
         score = 100
+        feedback = []
         text = resume_text.lower()
 
+        # Structure
         if "summary" not in text and "objective" not in text:
-            suggestions.append("❌ Add a professional summary")
+            feedback.append("💡 Add a strong professional summary highlighting your key skills and experience.")
             score -= 10
 
         if "experience" not in text:
-            suggestions.append("❌ Add work experience section")
+            feedback.append("💡 Include a detailed work experience section with roles, responsibilities, and achievements.")
             score -= 15
 
-        if "skills" not in text:
-            suggestions.append("❌ Add skills section")
-            score -= 15
-
-        if len(resume_text) < 800:
-            suggestions.append("⚠️ Resume too short")
+        if "education" not in text:
+            feedback.append("💡 Add your educational background with relevant details.")
             score -= 10
 
-        keywords = ["python", "sql", "data", "analysis"]
+        if "skills" not in text:
+            feedback.append("💡 Include a dedicated skills section with technical and soft skills.")
+            score -= 15
+
+        # Content quality
+        if len(resume_text) < 800:
+            feedback.append("💡 Your resume seems short. Add projects, measurable achievements, and impact.")
+            score -= 10
+
+        # Action verbs
+        action_words = ["developed", "built", "analyzed", "led", "designed", "implemented"]
+        if not any(word in text for word in action_words):
+            feedback.append("💡 Use strong action verbs like 'developed', 'led', or 'implemented' to describe your work.")
+            score -= 10
+
+        # Achievements
+        if "%" not in resume_text and "increase" not in text:
+            feedback.append("💡 Add measurable achievements (e.g., increased revenue by 20%, reduced costs by 15%).")
+            score -= 10
+
+        # Keywords
+        keywords = ["python", "sql", "data", "analysis", "dashboard"]
         missing_keywords = [kw for kw in keywords if kw not in text]
 
         if missing_keywords:
-            suggestions.append(f"⚠️ Missing keywords: {', '.join(missing_keywords)}")
+            feedback.append(f"💡 Missing important industry keywords: {', '.join(missing_keywords)}")
             score -= 10
 
-        st.success(f"📊 Resume Score: {score}/100")
+        # Formatting
+        if len(resume_text.split("\n")) < 10:
+            feedback.append("💡 Improve formatting with clear sections and bullet points.")
+            score -= 5
 
-        if suggestions:
-            for s in suggestions:
-                st.write(s)
+        # Final Score
+        st.success(f"📈 Resume Score: {score}/100")
+
+        if feedback:
+            for f in feedback:
+                st.write(f)
         else:
-            st.success("🔥 Excellent Resume!")
+            st.success("🔥 Excellent resume! Well-structured and impactful.")
 
     # =========================
     # JOB MATCHING
@@ -107,5 +150,15 @@ if uploaded_file:
 # =========================
 # FOOTER
 # =========================
+st.markdown("---")
+st.markdown("## ⚙️ How it works")
+st.markdown("""
+1. Upload your resume  
+2. Get instant feedback  
+3. Match with job descriptions  
+4. Improve and apply confidently 🚀
+""")
+
+st.markdown("⭐ Used by job seekers to improve resumes instantly")
 st.markdown("---")
 st.markdown("Made with ❤️ by Krunal | AI Resume Assistant")
