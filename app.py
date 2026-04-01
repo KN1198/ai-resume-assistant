@@ -1,5 +1,7 @@
 import streamlit as st
 from pypdf import PdfReader
+from docx import Document
+from io import BytesIO
 
 # =========================
 # PAGE CONFIG
@@ -30,12 +32,13 @@ st.markdown("### 🎯 Optimize your resume for any job")
 st.markdown("---")
 
 # =========================
-# UPLOAD RESUME
+# FILE UPLOAD
 # =========================
 uploaded_file = st.file_uploader("📄 Upload Resume (PDF)", type=["pdf"])
 
 if uploaded_file:
 
+    # Extract text
     reader = PdfReader(uploaded_file)
     resume_text = ""
 
@@ -49,13 +52,13 @@ if uploaded_file:
     st.text_area("Full Resume", resume_text, height=300)
 
     # =========================
-    # JOB DESCRIPTION INPUT
+    # JOB DESCRIPTION
     # =========================
     st.markdown("## 💼 Job Description")
     job_desc = st.text_area("Paste Job Description Here")
 
     # =========================
-    # ANALYSIS BUTTON
+    # ANALYSIS
     # =========================
     if st.button("🔍 Analyze Resume for this Job"):
 
@@ -65,67 +68,123 @@ if uploaded_file:
         resume_words = set(text.split())
         job_words = set(job_text.split())
 
-        # =========================
         # MATCH SCORE
-        # =========================
         match_words = resume_words.intersection(job_words)
-        match_score = int(len(match_words) / len(job_words) * 100)
+        match_score = int(len(match_words) / len(job_words) * 100) if job_words else 0
 
         st.subheader("📊 Job Match Score")
         st.success(f"{match_score}% match with job description")
 
-        # =========================
         # MISSING KEYWORDS
-        # =========================
         missing_keywords = job_words - resume_words
 
-        st.subheader("❌ Missing Keywords from Resume")
-        st.write(", ".join(list(missing_keywords)[:20]))
+        st.subheader("❌ Missing Keywords")
+        if missing_keywords:
+            st.write(", ".join(list(missing_keywords)[:20]))
+        else:
+            st.success("No major keywords missing!")
 
         # =========================
         # IMPROVEMENT SUGGESTIONS
         # =========================
-        st.subheader("💡 How to Improve Your Resume for This Job")
+        st.subheader("💡 Resume Improvements for This Job")
 
         suggestions = []
 
         if match_score < 50:
-            suggestions.append("⚠️ Your resume is not aligned with this job. Consider major updates.")
+            suggestions.append("⚠️ Resume is not aligned with this job. Major updates needed.")
 
         if match_score < 70:
             suggestions.append("⚠️ Add more relevant skills and experience from the job description.")
 
         if missing_keywords:
-            suggestions.append(f"👉 Add these keywords naturally: {', '.join(list(missing_keywords)[:10])}")
+            suggestions.append(f"👉 Add keywords: {', '.join(list(missing_keywords)[:10])}")
 
         if "experience" not in text:
-            suggestions.append("👉 Add relevant work experience matching this job.")
+            suggestions.append("👉 Add relevant work experience.")
 
         if "skills" not in text:
             suggestions.append("👉 Add a skills section tailored to this job.")
 
-        # =========================
-        # REWRITE HELP
-        # =========================
-        st.subheader("✍️ Suggested Resume Improvements")
-
-        st.write("❌ Generic: Worked on data analysis")
-        st.write("✅ Better: Analyzed business data using Python and SQL to improve decision-making")
-
-        st.write("❌ Generic: Responsible for dashboard")
-        st.write("✅ Better: Built interactive dashboards using Power BI to track KPIs")
+        for s in suggestions:
+            st.write(s)
 
         # =========================
-        # DISPLAY SUGGESTIONS
+        # REWRITE EXAMPLES
         # =========================
-        if suggestions:
-            for s in suggestions:
-                st.write(s)
-        else:
-            st.success("🔥 Your resume is well aligned with this job!")
+        st.subheader("✍️ Resume Rewrite Examples")
+
+        st.write("❌ Worked on data analysis")
+        st.write("✅ Analyzed business data using Python and SQL to improve decision-making")
+
+        st.write("❌ Responsible for dashboard")
+        st.write("✅ Built interactive dashboards using Power BI to track KPIs")
+
+        # =========================
+        # CREATE IMPROVED RESUME
+        # =========================
+        improved_resume = f"""
+PROFESSIONAL SUMMARY:
+Data-focused professional with experience in Python, SQL, and analytics.
+
+SKILLS:
+Python, SQL, Data Analysis, Dashboarding
+
+EXPERIENCE:
+- Improved processes using data-driven insights
+- Built dashboards and reports for decision-making
+
+TAILORED KEYWORDS:
+{', '.join(list(missing_keywords)[:10])}
+"""
+
+        st.markdown("## 📄 Improved Resume (Auto Generated)")
+        st.text_area("Improved Resume", improved_resume, height=300)
+
+        # =========================
+        # DOWNLOAD OPTIONS
+        # =========================
+
+        st.markdown("## 📥 Download Resume")
+
+        # TXT DOWNLOAD
+        st.download_button(
+            label="Download as TXT",
+            data=improved_resume,
+            file_name="improved_resume.txt",
+            mime="text/plain"
+        )
+
+        # DOCX DOWNLOAD FUNCTION
+        def create_docx(text):
+            doc = Document()
+            for line in text.split("\n"):
+                doc.add_paragraph(line)
+
+            buffer = BytesIO()
+            doc.save(buffer)
+            buffer.seek(0)
+            return buffer
+
+        docx_file = create_docx(improved_resume)
+
+        st.download_button(
+            label="Download as Word (.docx)",
+            data=docx_file,
+            file_name="improved_resume.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
 
 # =========================
 # FOOTER
 # =========================
 st.markdown("---")
-st.markdown("Made with | AI Resume Assistant")
+st.markdown("## ⚙️ How it works")
+st.markdown("""
+1. Upload your resume  
+2. Paste job description  
+3. Get match score  
+4. Improve and download your resume 🚀
+""")
+
+st.markdown("⭐ Built by Krunal | AI Resume Assistant")
