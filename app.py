@@ -161,4 +161,4 @@ st.markdown("""
 
 st.markdown("⭐ Used by job seekers to improve resumes instantly")
 st.markdown("---")
-st.markdown("Made with ❤️ by Krunal | AI Resume Assistant")
+st.markdown("Made with ❤️ | AI Resume Assistant")
