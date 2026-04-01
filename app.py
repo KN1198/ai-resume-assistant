@@ -1,5 +1,6 @@
 import streamlit as st
 from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 from docx import Document
 from io import BytesIO
 
@@ -38,12 +39,24 @@ uploaded_file = st.file_uploader("📄 Upload Resume (PDF)", type=["pdf"])
 
 if uploaded_file:
 
-    # Extract text
-    reader = PdfReader(uploaded_file)
     resume_text = ""
 
-    for page in reader.pages:
-        resume_text += page.extract_text() or ""
+    # =========================
+    # SAFE PDF READING
+    # =========================
+    try:
+        reader = PdfReader(uploaded_file)
+
+        for page in reader.pages:
+            resume_text += page.extract_text() or ""
+
+        if not resume_text.strip():
+            st.warning("⚠️ This PDF seems to be scanned or has no readable text.")
+            st.info("💡 Tip: Export your resume as a proper PDF from Word or Google Docs.")
+
+    except PdfReadError:
+        st.error("❌ Unable to read this PDF. Please upload a valid text-based resume.")
+        st.stop()
 
     # =========================
     # RESUME PREVIEW
@@ -121,11 +134,11 @@ if uploaded_file:
         st.write("✅ Built interactive dashboards using Power BI to track KPIs")
 
         # =========================
-        # CREATE IMPROVED RESUME
+        # IMPROVED RESUME GENERATION
         # =========================
         improved_resume = f"""
 PROFESSIONAL SUMMARY:
-Data-focused professional with experience in Python, SQL, and analytics.
+Data-driven professional with expertise in Python, SQL, and analytics.
 
 SKILLS:
 Python, SQL, Data Analysis, Dashboarding
@@ -138,16 +151,15 @@ TAILORED KEYWORDS:
 {', '.join(list(missing_keywords)[:10])}
 """
 
-        st.markdown("## 📄 Improved Resume (Auto Generated)")
-        st.text_area("Improved Resume", improved_resume, height=300)
+        st.markdown("## 📄 Improved Resume")
+        st.text_area("Generated Resume", improved_resume, height=300)
 
         # =========================
         # DOWNLOAD OPTIONS
         # =========================
-
         st.markdown("## 📥 Download Resume")
 
-        # TXT DOWNLOAD
+        # TXT
         st.download_button(
             label="Download as TXT",
             data=improved_resume,
@@ -155,7 +167,7 @@ TAILORED KEYWORDS:
             mime="text/plain"
         )
 
-        # DOCX DOWNLOAD FUNCTION
+        # DOCX FUNCTION
         def create_docx(text):
             doc = Document()
             for line in text.split("\n"):
