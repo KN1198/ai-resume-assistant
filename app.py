@@ -59,66 +59,91 @@ if uploaded_file:
     if st.button("Analyze Resume"):
 
         st.subheader("📊 Professional Resume Review")
-        st.info("📌 This analysis is based on ATS (Applicant Tracking System) best practices.")
+        st.info("📌 Detailed feedback based on recruiter & ATS best practices")
 
         score = 100
-        feedback = []
         text = resume_text.lower()
 
-        # Structure
-        if "summary" not in text and "objective" not in text:
-            feedback.append("💡 Add a strong professional summary highlighting your key skills and experience.")
+        sections = {
+            "summary": "summary" in text or "objective" in text,
+            "experience": "experience" in text,
+            "education": "education" in text,
+            "skills": "skills" in text
+        }
+
+        feedback = []
+
+        # Summary
+        if not sections["summary"]:
+            feedback.append("❌ Missing Professional Summary\n👉 Add 2–3 lines highlighting your experience, skills, and career focus.\n💡 Example: 'Data Analyst with 4+ years of experience in Python, SQL, and dashboarding.'")
             score -= 10
 
-        if "experience" not in text:
-            feedback.append("💡 Include a detailed work experience section with roles, responsibilities, and achievements.")
+        # Experience
+        if not sections["experience"]:
+            feedback.append("❌ Missing Work Experience Section\n👉 Clearly mention your roles with responsibilities and achievements.")
             score -= 15
+        else:
+            if "responsible for" in text:
+                feedback.append("⚠️ Weak phrasing in experience\n👉 Replace 'Responsible for' with strong action verbs like 'Led', 'Developed', 'Optimized'.")
+                score -= 5
 
-        if "education" not in text:
-            feedback.append("💡 Add your educational background with relevant details.")
+        # Education
+        if not sections["education"]:
+            feedback.append("❌ Missing Education Section\n👉 Add your academic background clearly.")
             score -= 10
 
-        if "skills" not in text:
-            feedback.append("💡 Include a dedicated skills section with technical and soft skills.")
+        # Skills
+        if not sections["skills"]:
+            feedback.append("❌ Missing Skills Section\n👉 Add technical skills like Python, SQL, Power BI, Excel.")
             score -= 15
-
-        # Content quality
-        if len(resume_text) < 800:
-            feedback.append("💡 Your resume seems short. Add projects, measurable achievements, and impact.")
-            score -= 10
-
-        # Action verbs
-        action_words = ["developed", "built", "analyzed", "led", "designed", "implemented"]
-        if not any(word in text for word in action_words):
-            feedback.append("💡 Use strong action verbs like 'developed', 'led', or 'implemented' to describe your work.")
-            score -= 10
 
         # Achievements
         if "%" not in resume_text and "increase" not in text:
-            feedback.append("💡 Add measurable achievements (e.g., increased revenue by 20%, reduced costs by 15%).")
+            feedback.append("⚠️ No measurable achievements\n👉 Add impact like 'Improved efficiency by 20%' or 'Reduced cost by 15%'")
+            score -= 10
+
+        # Length
+        if len(resume_text) < 800:
+            feedback.append("⚠️ Resume too short\n👉 Add more projects, tools, and achievements.")
             score -= 10
 
         # Keywords
-        keywords = ["python", "sql", "data", "analysis", "dashboard"]
+        keywords = ["python", "sql", "data", "analysis", "dashboard", "excel"]
         missing_keywords = [kw for kw in keywords if kw not in text]
 
         if missing_keywords:
-            feedback.append(f"💡 Missing important industry keywords: {', '.join(missing_keywords)}")
+            feedback.append(f"⚠️ Missing important keywords: {', '.join(missing_keywords)}\n👉 Add these to improve ATS ranking.")
             score -= 10
 
-        # Formatting
-        if len(resume_text.split("\n")) < 10:
-            feedback.append("💡 Improve formatting with clear sections and bullet points.")
-            score -= 5
+        # =========================
+        # REWRITE SUGGESTIONS
+        # =========================
+        st.markdown("## ✍️ Suggested Improvements")
 
-        # Final Score
-        st.success(f"📈 Resume Score: {score}/100")
+        if "responsible for" in text:
+            st.write("❌ Responsible for managing data")
+            st.write("✅ Managed and analyzed data to improve decision-making by 25%")
+
+        if "worked on" in text:
+            st.write("❌ Worked on dashboard")
+            st.write("✅ Designed and developed interactive dashboards using Power BI")
+
+        # =========================
+        # SCORE
+        # =========================
+        st.markdown("## 📈 Resume Score")
+        st.success(f"{score}/100")
+
+        # =========================
+        # FEEDBACK
+        # =========================
+        st.markdown("## 📌 Detailed Feedback")
 
         if feedback:
             for f in feedback:
                 st.write(f)
         else:
-            st.success("🔥 Excellent resume! Well-structured and impactful.")
+            st.success("🔥 Excellent resume! Ready for job applications.")
 
     # =========================
     # JOB MATCHING
@@ -161,4 +186,4 @@ st.markdown("""
 
 st.markdown("⭐ Used by job seekers to improve resumes instantly")
 st.markdown("---")
-st.markdown("Made with ❤️ | AI Resume Assistant")
+st.markdown("Made with ❤️ by Krunal | AI Resume Assistant")
